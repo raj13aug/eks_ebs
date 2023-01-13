@@ -54,7 +54,7 @@ resource "helm_release" "ebs_csi_driver" {
 # Storage Classes #
 ###################
 
-/* resource "kubernetes_storage_class_v1" "storageclass_gp2" {
+resource "kubernetes_storage_class_v1" "storageclass_gp2" {
   depends_on = [helm_release.ebs_csi_driver, module.ebs_csi_eks_role]
   metadata {
     name = "gp2-encrypted"
@@ -95,4 +95,4 @@ resource "kubernetes_persistent_volume_claim_v1" "efs_pvc" {
   depends_on = [
     kubernetes_storage_class_v1.storageclass_gp2
   ]
-} */
+}
