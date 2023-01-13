@@ -59,6 +59,10 @@ resource "kubernetes_storage_class" "storageclass_gp2" {
 
 }
 
+##########################
+# PersistentVolumeClaim  #
+##########################
+
 resource "kubernetes_persistent_volume_claim_v1" "efs_pvc" {
   metadata {
     name = "ebs-claim-01"
