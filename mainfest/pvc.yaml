@@ -1,0 +1,14 @@
+---
+#PVC definition
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ebs-claim-01
+spec:
+  storageClassName: gp2-encrypted 
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
