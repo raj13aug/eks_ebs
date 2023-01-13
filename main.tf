@@ -54,7 +54,7 @@ resource "helm_release" "ebs_csi_driver" {
 # Storage Classes #
 ###################
 
-resource "kubernetes_storage_class" "storageclass_gp2" {
+resource "kubernetes_storage_class_v1" "storageclass_gp2" {
   depends_on = [helm_release.ebs_csi_driver, module.ebs_csi_eks_role]
   metadata {
     name = "gp2-encrypted"
@@ -64,8 +64,9 @@ resource "kubernetes_storage_class" "storageclass_gp2" {
   }
 
   storage_provisioner    = "ebs.csi.aws.com"
-  reclaim_policy         = "Delete"
-  allow_volume_expansion = "true"
+  reclaim_policy         = "Retain"
+  allow_volume_expansion = true
+  volume_binding_mode    = "WaitForFirstConsumer"
 
   parameters = {
     type      = "gp2"
@@ -78,20 +79,20 @@ resource "kubernetes_storage_class" "storageclass_gp2" {
 # PersistentVolumeClaim  #
 ##########################
 
-/* resource "kubernetes_persistent_volume_claim_v1" "efs_pvc" {
+resource "kubernetes_persistent_volume_claim_v1" "efs_pvc" {
   metadata {
     name = "ebs-claim-01"
   }
   spec {
     access_modes       = ["ReadWriteMany"]
-    storage_class_name = kubernetes_storage_class.storageclass_gp2.metadata[0].name
+    storage_class_name = kubernetes_storage_class_v1.storageclass_gp2.metadata[0].name
     resources {
       requests = {
-        storage = "1Gi"
+        storage = "4Gi"
       }
     }
   }
   depends_on = [
-    kubernetes_storage_class.storageclass_gp2
+    kubernetes_storage_class_v1.storageclass_gp2
   ]
-} */
+}
