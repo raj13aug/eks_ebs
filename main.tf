@@ -4,6 +4,10 @@ data "aws_eks_cluster" "eks" {
 }
 
 
+data "aws_arn" "oidc_provider_arn" {
+  arn = "i2"
+}
+
 ###################
 # EBS CSI Role    #
 ###################
@@ -16,7 +20,7 @@ module "ebs_csi_eks_role" {
 
   oidc_providers = {
     main = {
-      provider_arn               = data.aws_eks_cluster.eks.oidc_provider_arn
+      provider_arn               = data.aws_arn.oidc_provider_arn
       namespace_service_accounts = ["kube-system:ebs-csi-controller-sa"]
     }
   }
