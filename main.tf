@@ -1,11 +1,16 @@
+data "aws_partition" "current_testing" {}
 
-data "aws_eks_cluster" "eks" {
-  name = "i2"
+data "aws_caller_identity" "current_testing" {}
+
+data "aws_eks_cluster" "cluster_testing" {
+  name = var.cluster_name
 }
 
-
-data "aws_arn" "oidc_provider_arn" {
-  arn = "i2"
+locals {
+  partition          = data.aws_partition.current_testing.id
+  account_id         = data.aws_caller_identity.current_testing.account_id
+  oidc_provider_arn  = replace(data.aws_eks_cluster.cluster_testing.identity[0].oidc[0].issuer, "https://", "")
+  oidc_provider_name = "arn:${local.partition}:iam::${local.account_id}:oidc-provider/${local.oidc_provider_arn}"
 }
 
 ###################
@@ -20,7 +25,7 @@ module "ebs_csi_eks_role" {
 
   oidc_providers = {
     main = {
-      provider_arn               = data.aws_arn.oidc_provider_arn
+      provider_arn               = local.oidc_provider_name
       namespace_service_accounts = ["kube-system:ebs-csi-controller-sa"]
     }
   }
