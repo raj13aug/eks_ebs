@@ -1,0 +1,81 @@
+data "aws_partition" "current_testing" {}
+
+data "aws_caller_identity" "current_testing" {}
+
+data "aws_eks_cluster" "cluster_testing" {
+  name = var.cluster_name
+}
+
+locals {
+  partition          = data.aws_partition.current_testing.id
+  account_id         = data.aws_caller_identity.current_testing.account_id
+  oidc_provider_arn  = replace(data.aws_eks_cluster.cluster_testing.identity[0].oidc[0].issuer, "https://", "")
+  oidc_provider_name = "arn:${local.partition}:iam::${local.account_id}:oidc-provider/${local.oidc_provider_arn}"
+}
+
+module "ebs_cni_irsa" {
+  source = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+
+  role_name             = "ebs_cni"
+  attach_ebs_csi_policy = true
+
+  oidc_providers = {
+    main = {
+      provider_arn               = local.oidc_provider_name
+      namespace_service_accounts = ["kube-system:ebs-csi-controller-sa"]
+    }
+  }
+
+  tags = {
+    Environment = "dev"
+    Terraform   = "true"
+  }
+}
+
+
+
+resource "helm_release" "ebs_csi" {
+
+  name             = "ebs-csi"
+  namespace        = "kube-system"
+  repository       = "https://kubernetes-sigs.github.io/aws-ebs-csi-driver"
+  chart            = "aws-ebs-csi-driver"
+  version          = "2.16.0"
+  create_namespace = false
+
+  values = [<<EOF
+controller:
+    topologySpreadConstraints:
+    - maxSkew: 1
+      topologyKey: topology.kubernetes.io/zone
+      whenUnsatisfiable: DoNotSchedule
+storageClasses: 
+- name: ebs-gp3-enc
+  volumeBindingMode: WaitForFirstConsumer
+  reclaimPolicy: Delete
+  parameters:
+    encrypted: "true"
+    type: gp3
+    csi.storage.k8s.io/fstype: "ext4" 
+    allowautoiopspergbincrease: "true"
+- name: ebs-gp3-noenc
+  volumeBindingMode: WaitForFirstConsumer
+  reclaimPolicy: Delete
+  parameters:
+    encrypted: "false"
+    type: gp3
+    csi.storage.k8s.io/fstype: "ext4" 
+    allowautoiopspergbincrease: "true"
+node:
+    tolerations:
+    #Any tolerations used to control pod deployment should be here
+    - operator: "Exists"
+EOF 
+  ]
+
+  set {
+    name  = "controller.serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn"
+    value = module.ebs_cni_irsa.iam_role_arn
+    type  = "string"
+  }
+}

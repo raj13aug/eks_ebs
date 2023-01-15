@@ -64,7 +64,7 @@ resource "kubernetes_storage_class_v1" "storageclass_gp2" {
   }
 
   storage_provisioner    = "ebs.csi.aws.com"
-  reclaim_policy         = "Retain"
+  reclaim_policy         = "Delete"
   allow_volume_expansion = true
   volume_binding_mode    = "WaitForFirstConsumer"
 
@@ -75,7 +75,7 @@ resource "kubernetes_storage_class_v1" "storageclass_gp2" {
 
 }
 
-##########################
+/* ##########################
 # PersistentVolumeClaim  #
 ##########################
 
@@ -95,4 +95,4 @@ resource "kubernetes_persistent_volume_claim_v1" "efs_pvc" {
   depends_on = [
     kubernetes_storage_class_v1.storageclass_gp2
   ]
-}
+} */
