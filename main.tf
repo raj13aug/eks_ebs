@@ -74,25 +74,3 @@ resource "kubernetes_storage_class_v1" "storageclass_gp2" {
   }
 
 }
-
-/* ##########################
-# PersistentVolumeClaim  #
-##########################
-
-resource "kubernetes_persistent_volume_claim_v1" "efs_pvc" {
-  metadata {
-    name = "ebs-claim-01"
-  }
-  spec {
-    access_modes       = ["ReadWriteMany"]
-    storage_class_name = kubernetes_storage_class_v1.storageclass_gp2.metadata[0].name
-    resources {
-      requests = {
-        storage = "4Gi"
-      }
-    }
-  }
-  depends_on = [
-    kubernetes_storage_class_v1.storageclass_gp2
-  ]
-} */
